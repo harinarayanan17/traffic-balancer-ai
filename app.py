@@ -284,9 +284,14 @@ def run_agent_pass(zones):
 
     for z in zones:
         dec = evaluate_zone(z, now=now)
-        all_decisions.append(dec if not z.get("override_active") else None)
+        all_decisions.append(dec)
 
-    zones = propagate_spillover(list(zones), all_decisions)
+    # Only propagate spillover for non-overridden zones
+    active_decisions_for_spill = [
+        dec if not z.get("override_active") else None
+        for z, dec in zip(zones, all_decisions)
+    ]
+    zones = propagate_spillover(list(zones), active_decisions_for_spill)
 
     updated, log = [], []
     for z, dec in zip(zones, all_decisions):
@@ -297,7 +302,7 @@ def run_agent_pass(zones):
             updated.append(apply_decision_to_zone(z, dec))
 
         cong = compute_congestion_score(z)
-        action_label = ("Overridden" if (z.get("override_active") or dec is None)
+        action_label = ("Overridden" if z.get("override_active")
                         else ", ".join(a.display_label for a in dec.chosen_actions))
 
         log.append({
@@ -313,19 +318,19 @@ def run_agent_pass(zones):
             "action":      action_label,
             "override":    z.get("override_active", False),
             "override_reason": z.get("override_reason", ""),
-            "reasoning":   dec.reasoning_trace,
+            "reasoning":   dec.reasoning_trace if dec else "Operator override active.",
             "scores": {
-                "congestion":             dec.scores.congestion_score,
-                "event_pressure":         dec.scores.event_pressure,
-                "diversion_impact":       dec.scores.impact_of_diversion,
-                "time_sensitivity":       dec.scores.time_sensitivity,
-                "route_notification_fit": dec.scores.route_notification_fit,
-                "toll_adjustment_fit":    dec.scores.toll_adjustment_fit,
-                "signal_timing_fit":      dec.scores.signal_timing_fit,
+                "congestion":             dec.scores.congestion_score if (dec and dec.scores) else cong,
+                "event_pressure":         dec.scores.event_pressure if (dec and dec.scores) else 0.0,
+                "diversion_impact":       dec.scores.impact_of_diversion if (dec and dec.scores) else 0.0,
+                "time_sensitivity":       dec.scores.time_sensitivity if (dec and dec.scores) else 0.0,
+                "route_notification_fit": dec.scores.route_notification_fit if (dec and dec.scores) else 0.0,
+                "toll_adjustment_fit":    dec.scores.toll_adjustment_fit if (dec and dec.scores) else 0.0,
+                "signal_timing_fit":      dec.scores.signal_timing_fit if (dec and dec.scores) else 0.0,
             },
             "payloads": [
                 {"type": a.action_type, "label": a.display_label, "text": a.payload_text}
-                for a in dec.chosen_actions
+                for a in (dec.chosen_actions if dec else [])
             ],
         })
 

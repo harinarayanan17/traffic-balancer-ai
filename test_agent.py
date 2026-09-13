@@ -5,6 +5,7 @@ Prints decisions for 4 contrasting zones so you can verify reasoning diversity.
 """
 
 import json
+import sys
 from datetime import datetime
 from pathlib import Path
 
@@ -13,6 +14,8 @@ from agent import evaluate_zone
 SEED = Path("data/zones_seed.json")
 
 def main():
+    if hasattr(sys.stdout, 'reconfigure'):
+        sys.stdout.reconfigure(encoding='utf-8')
     with open(SEED) as f:
         zones = json.load(f)
 
