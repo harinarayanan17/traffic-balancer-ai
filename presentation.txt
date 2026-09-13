@@ -1,0 +1,71 @@
+🏆 Complete 4-Person Presentation Guide (~3.5 Minutes)
+👥 Team Setup:
+Person D (Frontend Lead) holds the laptop / controls the mouse.
+Person A (Data Engineer), Person B (AI Engineer), Person C (Backend/Safety Engineer), and Person D stand together facing the judges.
+⏱️ PHASE 1: Hook & Problem Statement (0:00 – 0:45)
+Speaker: Person D (Frontend Lead)
+Screen Action: Open on Tab 1: Live Overview.
+
+Person D: *"Hello judges! We are team Traffic Balancer AI.
+
+Traffic congestion isn't just frustrating — traditional traffic systems fail because they treat roads in isolation. When a system fixes a jam at Junction A by diverting traffic, it secretly creates a bigger gridlock at Junction B two blocks over.
+
+Our system, Smart City Traffic Balancer, is an autonomous congestion management platform managing 20 city zones. It evaluates multi-factor trade-offs, predicts second-order spillover traffic, and gives traffic engineers complete transparency into every decision.
+
+I'll hand over to Person A to explain our data world."*
+
+⏱️ PHASE 2: Data Architecture & Simulator (0:45 – 1:30)
+Speaker: Person A (Data Engineer)
+Screen Action: Person D points mouse to the top 4 KPI cards and clicks Simulate Tick on the sidebar.
+
+Person A: *"Thanks Person D! As the Data Engineer, I built our underlying 20-zone urban dataset in zones_seed.json and our traffic feed engine in feed.py.
+
+We model 20 distinct city zones categorized into Arterials, Highways, and Local roads. Each zone tracks live speeds, free-flow limits, road capacities, and event countdowns like concerts or sports matches.
+
+[Person D clicks 'Simulate Tick']
+
+Every click of 'Simulate Tick' advances simulation time by 5 minutes. Our feed engine combines realistic random-walk traffic drift with scripted event surges — ensuring that during live stress tests, our system detects real-time bottlenecks smart-on-cue.
+
+Now Person B will walk you through our AI reasoning engine."*
+
+⏱️ PHASE 3: AI Reasoning & Multi-Factor Scoring (1:30 – 2:30)
+Speaker: Person B (AI Engineer)
+Screen Action: Person D clicks Tab 2: Zone Analysis and selects Z05 · Silk Board Junction from the dropdown.
+
+Person B: *"Thanks Person A! As the AI Engineer, I built the multi-factor reasoning core in agent.py.
+
+Notice here for Silk Board Junction (Z05):
+
+No Black Box: We reject opaque, unexplainable AI decisions.
+Four Grounding Factors: Look at the first bar chart — the agent scores Congestion, Event Pressure, Diversion Impact, and Time Sensitivity.
+Strategy Fit: Look at the second bar chart — the agent evaluates all 3 levers simultaneously (Signal Timing, Toll Adjustment, Route Notification). Because Z05 has high arterial congestion and event pressure, it selected Signal Timing.
+Reasoning Rationale: Under 'Decision Rationale', the agent outputs a structured audit trace detailing its baseline comparisons, assumptions (like 25% driver compliance), and falsification criteria.
+I'll pass to Person C to show our safety net and spillover model."*
+
+⏱️ PHASE 4: Spillover Propagation & Human Override (2:30 – 3:20)
+Speaker: Person C (Backend & Integration)
+Screen Action:
+
+Person D highlights the yellow Spillover Warning Banner on Tab 2 (Originating from Z05...).
+Person D scrolls down to Operator Override, selects Signal Timing, types Officer on-site, and clicks Apply.
+Person C: *"Thanks Person B! As Backend & Integration Engineer, I built the safety guardrails, second-order spillover model, and persistent state pipeline in zones_live.json.
+
+Look at this yellow warning banner: when Z05 diverts vehicles, our propagate_spillover() algorithm calculates that neighboring Old Airport Road (Z17) absorbed +11.2% extra density. The system explicitly identifies the origin zone so downstream signals can prepare before cars arrive.
+
+[Person D clicks 'Apply' on Override]
+
+Furthermore, in real-world deployments, traffic officers must retain authority. When an operator forces an override, our system instantly applies the physical throughput improvements — dropping congestion from 92% to 78% — while locking out automated changes."*
+
+⏱️ PHASE 5: Conclusion & Q&A Readiness (3:20 – 3:30)
+Speaker: Person D (Frontend Lead)
+Screen Action: Person D switches back to Tab 1: Live Overview for a clean final view.
+
+Person D: *"To summarize: Smart City Traffic Balancer gives traffic authorities a single-pane-of-glass dashboard that handles both single-point jams and massive multi-point events like Thrissur Pooram or sports games.
+
+Thank you! We'd love to take your questions."*
+
+🛡️ Quick Q&A Assignment Cheat Sheet:
+If asked about Data / Files: Person A answers (zones_seed.json & feed.py).
+If asked about AI / Logic: Person B answers (agent.py multi-factor scoring).
+If asked about Safety / Math / Overrides: Person C answers (propagate_spillover() & zones_live.json).
+If asked about UI / User Experience: Person D answers (Streamlit, CSS tokens & HTML grid).

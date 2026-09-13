@@ -17,6 +17,7 @@ def clean_html(html: str) -> str:
 from agent import (
     evaluate_zone,
     apply_decision_to_zone,
+    apply_override_to_zone,
     compute_congestion_score,
     propagate_spillover,
 )
@@ -289,9 +290,8 @@ def run_agent_pass(zones):
 
     updated, log = [], []
     for z, dec in zip(zones, all_decisions):
-        if z.get("override_active") or dec is None:
-            if dec is None:
-                dec = evaluate_zone(z, now=now)
+        if z.get("override_active"):
+            z = apply_override_to_zone(z)
             updated.append(z)
         else:
             updated.append(apply_decision_to_zone(z, dec))
@@ -309,6 +309,7 @@ def run_agent_pass(zones):
             "cong_score":  cong,
             "baseline_pct":int((z.get("baseline_congestion") or cong) * 100),
             "spill_pct":   z.get("spillover_received_pct", 0),
+            "spill_sources": z.get("spillover_sources", []),
             "action":      action_label,
             "override":    z.get("override_active", False),
             "override_reason": z.get("override_reason", ""),
@@ -521,7 +522,12 @@ def render_analysis(zones):
     </div>
     """), unsafe_allow_html=True)
 
-    if spill > 3:
+    sources = log.get("spill_sources", [])
+    if spill > 0 and sources:
+        src_str = ", ".join(f"**{s['source_id']} ({s['source_name']})** (+{s['load']}%)" for s in sources)
+        st.warning(f"This zone absorbed **+{spill}%** extra density from upstream diversions. "
+                   f"Originating from: {src_str}.")
+    elif spill > 3:
         st.warning(f"This zone absorbed **+{spill}%** extra density from upstream diversions. "
                    f"Monitor neighboring zones next tick.")
 
@@ -597,12 +603,14 @@ def render_analysis(zones):
                               label_visibility="collapsed")
         if c3.button("Apply", type="primary"):
             if action != "— select —":
-                for z in st.session_state.zones:
+                for idx, z in enumerate(st.session_state.zones):
                     if z["zone_id"] == sel:
                         z["override_active"]  = True
-                        z["override_reason"]  = f"{reason} · Forced: {action}"
+                        z["override_action"]  = action
+                        z["override_reason"]  = f"{reason or 'Operator decision'} · Forced: {action}"
                         z["last_action"]      = action
                         z["last_updated"]     = datetime.now().isoformat(timespec="seconds")
+                        st.session_state.zones[idx] = apply_override_to_zone(z)
                         break
                 save_live(st.session_state.zones)
                 st.rerun()
@@ -672,8 +680,18 @@ def main():
         st.session_state.decisions = []
         st.session_state.tick      = 0
         st.session_state.selected  = None
+        updated, log = run_agent_pass(st.session_state.zones)
+        st.session_state.zones = updated
+        st.session_state.decisions = log
         save_live(st.session_state.zones)
         st.rerun()
+
+    # Automatically run initial AI evaluation pass on startup (Tick 0)
+    if not st.session_state.decisions:
+        updated, log = run_agent_pass(st.session_state.zones)
+        st.session_state.zones = updated
+        st.session_state.decisions = log
+        save_live(st.session_state.zones)
 
     if tick_btn:
         st.session_state.tick += 1

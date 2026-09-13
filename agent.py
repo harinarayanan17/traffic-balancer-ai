@@ -436,6 +436,7 @@ def propagate_spillover(zones: list[dict], decisions: list) -> list[dict]:
     # Reset spillover from previous tick
     for z in zones:
         z["spillover_received_pct"] = 0
+        z["spillover_sources"] = []
 
     for decision in decisions:
         if decision is None:
@@ -468,6 +469,13 @@ def propagate_spillover(zones: list[dict], decisions: list) -> list[dict]:
             neighbor["spillover_received_pct"] = round(
                 neighbor.get("spillover_received_pct", 0) + load, 1
             )
+            if "spillover_sources" not in neighbor:
+                neighbor["spillover_sources"] = []
+            neighbor["spillover_sources"].append({
+                "source_id": source_zone["zone_id"],
+                "source_name": source_zone["zone_name"],
+                "load": load
+            })
             # Spill slightly degrades speed too
             speed_loss = load * 0.08
             neighbor["current_speed_kmph"] = round(
@@ -688,4 +696,21 @@ def apply_decision_to_zone(zone: dict, decision: Decision) -> dict:
     zone["last_action"] = ", ".join(action_labels) if action_labels else "Monitor Only"
     zone["last_action_reason"] = decision.reasoning_trace[:200] + "…"
     zone["last_updated"] = decision.timestamp
+    return zone
+
+
+def apply_override_to_zone(zone: dict) -> dict:
+    """
+    Apply physical traffic improvement effects when an operator forces a manual action override.
+    """
+    zone = dict(zone)
+    action = zone.get("override_action", "")
+    if "Signal" in action or "Signal Timing" in action:
+        zone["vehicle_density_pct"] = max(15, int(zone["vehicle_density_pct"] * 0.85))
+        zone["current_speed_kmph"] = round(min(zone["free_flow_speed_kmph"], zone["current_speed_kmph"] * 1.2), 1)
+    elif "Toll" in action or "Toll Adjustment" in action:
+        zone["vehicle_density_pct"] = max(15, int(zone["vehicle_density_pct"] * 0.82))
+        zone["toll_multiplier"] = 2.0
+    elif "Route Notification" in action or "Notification" in action:
+        zone["vehicle_density_pct"] = max(15, int(zone["vehicle_density_pct"] * 0.75))
     return zone
