@@ -597,7 +597,11 @@ def render_analysis(zones):
                 if z["zone_id"] == sel:
                     z["override_active"] = False
                     z["override_reason"] = None
+                    z["override_action"] = None
                     break
+            updated, log_pass = run_agent_pass(st.session_state.zones)
+            st.session_state.zones = updated
+            st.session_state.decisions.extend(log_pass)
             save_live(st.session_state.zones)
             st.rerun()
     else:
@@ -617,6 +621,9 @@ def render_analysis(zones):
                         z["last_updated"]     = datetime.now().isoformat(timespec="seconds")
                         st.session_state.zones[idx] = apply_override_to_zone(z)
                         break
+                updated, log_pass = run_agent_pass(st.session_state.zones)
+                st.session_state.zones = updated
+                st.session_state.decisions.extend(log_pass)
                 save_live(st.session_state.zones)
                 st.rerun()
             else:
